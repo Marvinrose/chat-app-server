@@ -43,6 +43,12 @@ app.use(mongosanitize());
 
 app.use(xss());
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "PATCH", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
 
 module.exports = app;
