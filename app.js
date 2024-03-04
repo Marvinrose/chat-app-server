@@ -16,6 +16,8 @@ const cors = require("cors"); // CORS is a node.js package for providing a Conne
 
 const app = express();
 
+// app.use(xss());
+
 app.use(express.json({ limit: "10kb" }));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -41,7 +43,7 @@ app.use(
 
 app.use(mongosanitize());
 
-app.use(xss());
+
 
 app.use(
   cors({
