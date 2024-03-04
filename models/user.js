@@ -44,6 +44,10 @@ const userSchema = new mongoose.Schema({
   updatedAt: {
     type: Date,
   },
+  verified: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 userSchema.methods.correctPassword = async function (

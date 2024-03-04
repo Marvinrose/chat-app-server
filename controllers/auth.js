@@ -4,6 +4,21 @@ const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
 const User = require("../models/user");
 
+// Register new user
+exports.register = async (req, res, next) => {
+  const { firstName, lastName, email, password } = req.body;
+
+  //   check if a verified user with given email exists
+  const existing_user = await User.findOne({ email: email });
+
+  if (existing_user && existing_user.verified) {
+    res.status(400).json({
+      status: "error",
+      message: "User already exists! Please login",
+    });
+  }
+};
+
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
 
