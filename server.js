@@ -1,14 +1,35 @@
 const app = require("./app");
 
+const dotenv = require("dotenv");
+
+const mongoose = require("mongoose");
+
+dotenv.config({ path: "./config.env" });
+
 process.on("uncaughtException", (err) => {
   console.log(err);
   process.exit(1);
 });
 
-
 const http = require("http");
+const { default: mongoose } = require("mongoose");
 
 const server = http.createServer(app);
+
+const DB = process.env.DBURI.replace("<PASSWORD>", process.env.DBPASSWORD);
+
+mongoose
+  .connect(DB, {
+    useNewUrlParser: true,
+    useCreateIndex: true,
+    useFindAndModify: false,
+    useUnifiedToplogy: true,
+  })
+  .then((con) => {
+    console.log("DB connection is succesful!..");
+  }).catch((err)=>{
+    console.log(err);
+  });
 
 const port = process.env.PORT || 8000;
 
