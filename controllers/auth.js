@@ -65,7 +65,6 @@ exports.sendOTP = async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: "Otp sent successfully!",
-    token,
   });
 };
 
@@ -97,6 +96,16 @@ exports.verifyOtp = async (req, res, next) => {
 
   user.verified = true;
   user.otp = undefined;
+
+  await user.save({ new: true, validateModifiedOnly: true });
+
+  const token = signToken(user._id);
+
+  res.status(200).json({
+    status: "success",
+    message: "OTP verified Successfully!",
+    token,
+  });
 };
 
 exports.login = async (req, res, next) => {
@@ -129,3 +138,9 @@ exports.login = async (req, res, next) => {
     token,
   });
 };
+
+exports.forgotPassword = async (req, res, next) => {
+  //
+};
+
+exports.resetPassword = async (req, res, next) => {};
