@@ -1,3 +1,9 @@
 const router = require("express").Router();
 
-router.post("/update-me");
+const userController = require("../controllers/user");
+
+const authController = require("../controllers/auth");
+
+router.post("/update-me", authController.protect, userController.updateMe);
+
+module.exports = router;
