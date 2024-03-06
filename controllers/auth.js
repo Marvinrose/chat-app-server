@@ -168,7 +168,30 @@ exports.protect = async (req, res, next) => {
 
   // Verification of token
 
-  const decoded = await promisify()
+  const decoded = await promisify(jwt.verify)(token, process.env.JWT_SECRET);
+
+  // Check if user still exists
+
+  const this_user = await User.findById(decoded.userId);
+
+  if (!this_user) {
+    res.status(400).json({
+      status: "error",
+      message: "This user doesn't exist",
+    });
+  }
+
+  // Check if user changed their password after token was issued
+
+  if (this_user.changedPasswordAfter(decoded.iat)) {
+    res.status(400).json({
+      status: "error",
+      message: "User recently updated password.. Please log In!",
+    });
+  }
+
+  req.user = this_user;
+  next();
 };
 
 // Types of
