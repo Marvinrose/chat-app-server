@@ -1,5 +1,7 @@
 const express = require("express");
 
+const routes = require("./routes/index");
+
 const morgan = require("morgan"); //  is a popular middleware for logging HTTP requests in Node.js web applications.
 
 const rateLimit = require("express-rate-limit"); //  Use to limit repeated requests to public APIs and/or endpoints such as password reset.
@@ -43,7 +45,7 @@ app.use(
 
 app.use(mongosanitize());
 
-
+app.use(routes);
 
 app.use(
   cors({
