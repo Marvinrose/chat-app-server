@@ -4,6 +4,8 @@ const otpGenerator = require("otp-generator");
 
 const crypto = require("crypto");
 
+const mailService = require("../services/mailer");
+
 const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
 // Signup => register - sendOTP - verifyOTP
@@ -66,6 +68,25 @@ exports.sendOTP = async (req, res, next) => {
   });
 
   // TODO => Send Mail
+
+  mailService.sendEmail({
+    from: "rozzeymarvin32@gmail.com",
+    to: "example@gmail.com",
+    subject: "otp for tawk",
+    text: `Your OTP is ${new_otp}, valid for 10 minutes..`,
+  });
+  // .then(() => {
+  //   res.status(200).json({
+  //     status: "success",
+  //     message: "Message sent successfully!",
+  //   });
+  // })
+  // .catch((err) => {
+  //   res.status(500).json({
+  //     status: "error",
+  //     message: "Oops! Something went wrong...",
+  //   });
+  // });
 
   res.status(200).json({
     status: "success",
