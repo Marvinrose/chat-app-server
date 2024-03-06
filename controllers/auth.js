@@ -6,8 +6,11 @@ const crypto = require("crypto");
 
 const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
+// Signup => register - sendOTP - verifyOTP
+
 const User = require("../models/user");
 const filterObject = require("../utils/filterObj");
+const { promisify } = require("util");
 
 // Register new user
 exports.register = async (req, res, next) => {
@@ -141,7 +144,34 @@ exports.login = async (req, res, next) => {
   });
 };
 
-exports.protect = async (req, res, next) => {};
+exports.protect = async (req, res, next) => {
+  // Getting token (JWT) and check if its there
+
+  let token;
+
+  // 'Bearer hjkkjijuihgftgfyuijk'
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer")
+  ) {
+    token = req.headers.authorization.split("")(1);
+  } else if (req.cookies.jwt) {
+    token = req.cookies.jwt;
+  } else {
+    res.status(400).json({
+      status: "error",
+      message: "You are not logged in.. Please log in to get access!",
+    });
+    return;
+  }
+
+  // Verification of token
+
+  const decoded = await promisify()
+};
+
+// Types of
 
 exports.forgotPassword = async (req, res, next) => {
   // Get user email
@@ -153,6 +183,7 @@ exports.forgotPassword = async (req, res, next) => {
       status: "error",
       message: "There is no user with given email address",
     });
+    return;
   }
 
   // Generate the random reset token
@@ -200,6 +231,7 @@ exports.resetPassword = async (req, res, next) => {
       status: "error",
       message: "Token is invalid or expired!",
     });
+    return;
   }
 
   // Update users password and set reset token and expiry to undefined
