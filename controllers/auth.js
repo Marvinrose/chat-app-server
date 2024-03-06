@@ -167,7 +167,19 @@ exports.forgotPassword = async (req, res, next) => {
     });
   } catch (error) {
     user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    await user.save({ validateBeforeSave: false });
+
+    res.status(500).json({
+      status: "error",
+      message: "There was an error sending the email.. Please try again later!",
+    });
   }
 };
 
-exports.resetPassword = async (req, res, next) => {};
+exports.resetPassword = async (req, res, next) => {
+  // Get the user based on token
+
+  const hashedToken = 
+};
