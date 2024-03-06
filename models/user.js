@@ -62,12 +62,23 @@ const userSchema = new mongoose.Schema({
 });
 
 userSchema.pre("save", async function (next) {
-  //Only if otp is actually modified
+  //Only run this fxn if otp is actually modified
 
   if (!this.isModified("otp")) return next();
 
   // Hash the otp with the cost of 12
   this.otp = await bcryptjs.hash(this.otp, 12);
+
+  next();
+});
+
+userSchema.pre("save", async function (next) {
+  //Only run this fxn if password is actually modified
+
+  if (!this.isModified("password")) return next();
+
+  // Hash the password with the cost of 12
+  this.password = await bcryptjs.hash(this.password, 12);
 
   next();
 });
