@@ -156,6 +156,18 @@ exports.forgotPassword = async (req, res, next) => {
   // Generate the random reset token
 
   const resetToken = user.createPasswordResetToken();
+
+  const resetURL = `https://chat-app-lovat-six.vercel.app/auth/reset-password/?code=${resetToken}`;
+
+  try {
+    // TODO => Send email with reset url
+    res.status(200).json({
+      status: "success",
+      message: "Reset password link sent to email",
+    });
+  } catch (error) {
+    user.passwordResetToken = undefined;
+  }
 };
 
 exports.resetPassword = async (req, res, next) => {};
