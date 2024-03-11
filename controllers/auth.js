@@ -223,11 +223,11 @@ exports.forgotPassword = async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-    res.status(400).json({
+   return res.status(404).json({
       status: "error",
       message: "There is no user with given email address",
     });
-    return;
+  
   }
 
   // Generate the random reset token
@@ -268,7 +268,7 @@ exports.resetPassword = async (req, res, next) => {
     passwordResetExpires: { $gt: Date.now() },
   });
 
-  // If token has expired or submission is out of time window
+  // If token has not expired and there is a user, set the new password
 
   if (!user) {
     res.status(400).json({
