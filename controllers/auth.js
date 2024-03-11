@@ -14,6 +14,8 @@ const User = require("../models/user");
 const filterObject = require("../utils/filterObj");
 const { promisify } = require("util");
 
+const catchAsync = require("../utils/catchAsync");
+
 // Register new user
 exports.register = async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
@@ -52,7 +54,7 @@ exports.register = async (req, res, next) => {
   }
 };
 
-exports.sendOTP = async (req, res, next) => {
+exports.sendOTP = catchAsync(async (req, res, next) => {
   const { userId } = req;
   const new_otp = otpGenerator.generate(6, {
     upperCaseAlphabets: false,
@@ -62,10 +64,18 @@ exports.sendOTP = async (req, res, next) => {
 
   const otp_expiry_time = Date.now() + 10 + 60 * 1000; // 10 mins after otp is sent
 
-  await User.findByIdAndUpdate(userId, {
-    otp: new_otp,
-    otp_expiry_time,
-  });
+  const user = await User.findByIdAndUpdate(
+    userId,
+    {
+      otp: new_otp,
+      otp_expiry_time: otp_expiry_time,
+    },
+    { new: true }
+  );
+
+  // user.otp = new_otp.toString();
+
+  // await user.save({ new: true, validateModifiedOnly: true });
 
   // TODO => Send Mail
 
@@ -92,9 +102,10 @@ exports.sendOTP = async (req, res, next) => {
     status: "success",
     message: "Otp sent successfully!",
   });
-};
+  console.log("otppp", new_otp);
+});
 
-exports.verifyOtp = async (req, res, next) => {
+exports.verifyOTP = catchAsync(async (req, res, next) => {
   // verify otp and update user record accordingly
 
   const { email, otp } = req.body;
@@ -111,11 +122,19 @@ exports.verifyOtp = async (req, res, next) => {
     });
   }
 
+  if (user.verified) {
+    return res.status(400).json({
+      status: "error",
+      message: "Email is already verified",
+    });
+  }
+
   if (!(await user.correctOTP(otp, user.otp))) {
     res.status(400).json({
       status: "error",
       message: "OTP is incorrect..",
     });
+    return;
   }
 
   // OTP is correct
@@ -131,9 +150,11 @@ exports.verifyOtp = async (req, res, next) => {
     status: "success",
     message: "OTP verified Successfully!",
     token,
+    user_id: user._id,
   });
-};
+});
 
+// User Login
 exports.login = async (req, res, next) => {
   const { email, password } = req.body;
 
@@ -223,11 +244,10 @@ exports.forgotPassword = async (req, res, next) => {
   const user = await User.findOne({ email: req.body.email });
 
   if (!user) {
-   return res.status(404).json({
+    return res.status(404).json({
       status: "error",
       message: "There is no user with given email address",
     });
-  
   }
 
   // Generate the random reset token
@@ -240,7 +260,7 @@ exports.forgotPassword = async (req, res, next) => {
     // TODO => Send email with reset url
     res.status(200).json({
       status: "success",
-      message: "Reset password link sent to email",
+      message: "Token sent to email",
     });
   } catch (error) {
     user.passwordResetToken = undefined;
