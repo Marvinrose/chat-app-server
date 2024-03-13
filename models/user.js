@@ -54,7 +54,7 @@ const userSchema = new mongoose.Schema({
     default: false,
   },
   otp: {
-    type: Number,
+    type: String,
   },
   otp_expiry_time: {
     type: Date,
@@ -64,10 +64,12 @@ const userSchema = new mongoose.Schema({
 userSchema.pre("save", async function (next) {
   //Only run this fxn if otp is actually modified
 
-  if (!this.isModified("otp")) return next();
+  if (!this.isModified("otp") || !this.otp) return next();
 
   // Hash the otp with the cost of 12
-  this.otp = await bcrypt.hash(this.otp, 12);
+  this.otp = await bcrypt.hash(this.otp.toString(), 12);
+
+  console.log(this.otp.toString(), "FROM PRE SAVE HOOK");
 
   next();
 });
@@ -75,11 +77,21 @@ userSchema.pre("save", async function (next) {
 userSchema.pre("save", async function (next) {
   //Only run this fxn if password is actually modified
 
-  if (!this.isModified("password")) return next();
+  if (!this.isModified("password") || !this.password) return next();
 
   // Hash the password with the cost of 12
   this.password = await bcrypt.hash(this.password, 12);
 
+  //! Shift it to next hook // this.passwordChangedAt = Date.now() - 1000;
+
+  next();
+});
+
+userSchema.pre("save", function (next) {
+  if (!this.isModified("password") || this.isNew || !this.password)
+    return next();
+
+  this.passwordChangedAt = Date.now() - 1000;
   next();
 });
 
@@ -90,10 +102,9 @@ userSchema.methods.correctPassword = async function (
   return await bcrypt.compare(candidatePassword, userPassword);
 };
 
-userSchema.methods.correctOTP = async function (
-  candidateOTP, // 823932
-  userOTP // byuhuyuyhgygygy
-) {
+userSchema.methods.correctOTP = async function (candidateOTP, userOTP) {
+  console.log("candidateOTP:", candidateOTP);
+  console.log("userOTP:", userOTP);
   return await bcrypt.compare(candidateOTP, userOTP);
 };
 
@@ -103,7 +114,7 @@ userSchema.methods.createPasswordResetToken = function () {
   this.passwordResetToken = crypto
     .createHash("sha256")
     .update(resetToken)
-    .digest("hexs");
+    .digest("hex");
 
   this.passwordResetExpires = Date.now() + 10 * 60 * 1000;
 

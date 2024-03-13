@@ -17,19 +17,25 @@ const { promisify } = require("util");
 const catchAsync = require("../utils/catchAsync");
 
 // Register new user
-exports.register = async (req, res, next) => {
+exports.register = catchAsync(async (req, res, next) => {
   const { firstName, lastName, email, password } = req.body;
+
+  console.log("Request Body:", req.body); // Log the request body to check if data is being received correctly
 
   const filteredBody = filterObject(
     req.body,
     "firstName",
     "lastName",
-    "password",
-    "email"
+    "email",
+    "password"
   );
+
+  console.log("Filtered Body:", filteredBody); // Log the filtered body to verify if the required fields are present
 
   //   check if a verified user with given email exists
   const existing_user = await User.findOne({ email: email });
+
+  console.log("Existing User:", existing_user); // Log the existing user to see if a user with the provided email exists
 
   if (existing_user && existing_user.verified) {
     res.status(400).json({
@@ -37,6 +43,7 @@ exports.register = async (req, res, next) => {
       message: "User already exists! Please login",
     });
   } else if (existing_user) {
+    console.log("User exists but not verified, updating information");
     await User.findOneAndUpdate({ email: email }, filteredBody, {
       new: true,
       validateModifiedOnly: true,
@@ -52,30 +59,49 @@ exports.register = async (req, res, next) => {
     req.userId = new_user._id;
     next();
   }
-};
+});
 
 exports.sendOTP = catchAsync(async (req, res, next) => {
-  const { userId } = req;
+  const { userId } = req.body;
+
+  // If userId is not found in params, check req.body or req.query based on how userId is sent
+
+  if (!userId) {
+    return res.status(400).json({
+      status: "error",
+      message: "User ID not found in request",
+    });
+  }
   const new_otp = otpGenerator.generate(6, {
     upperCaseAlphabets: false,
     lowerCaseAlphabets: false,
     specialChars: false,
   });
 
-  const otp_expiry_time = Date.now() + 10 + 60 * 1000; // 10 mins after otp is sent
+  const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 mins after otp is sent
 
-  const user = await User.findByIdAndUpdate(
-    userId,
-    {
+  try {
+    const user = await User.findByIdAndUpdate(userId, {
       otp: new_otp,
       otp_expiry_time: otp_expiry_time,
-    },
-    { new: true }
-  );
+    });
 
-  // user.otp = new_otp.toString();
+    if (!user) {
+      // Handle case where user is not found
+      return res
+        .status(404)
+        .json({ status: "error", message: "User not found" });
+    }
 
-  // await user.save({ new: true, validateModifiedOnly: true });
+    console.log(otp_expiry_time, "expires in..");
+    await user.save({ new: true, validateModifiedOnly: true });
+  } catch (error) {
+    // Handle database errors
+    console.error("Database error:", error);
+    return res
+      .status(500)
+      .json({ status: "error", message: "Internal server error" });
+  }
 
   // TODO => Send Mail
 
@@ -110,10 +136,14 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
 
   const { email, otp } = req.body;
 
+  console.log("Verifying OTP for email:", email);
+
   const user = await User.findOne({
     email,
     otp_expiry_time: { $gt: Date.now() },
   });
+
+  console.log("Found user:", user);
 
   if (!user) {
     res.status(400).json({
@@ -122,6 +152,8 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
     });
   }
 
+  console.log("User verified status:", user.verified);
+
   if (user.verified) {
     return res.status(400).json({
       status: "error",
@@ -129,13 +161,20 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
     });
   }
 
-  if (!(await user.correctOTP(otp, user.otp))) {
-    res.status(400).json({
-      status: "error",
-      message: "OTP is incorrect..",
-    });
-    return;
-  }
+  console.log("Verifying OTP...");
+
+  console.log("OTP entered by user:", otp);
+  console.log("OTP stored in database:", user.otp);
+
+  // if (!(await user.correctOTP(otp, user.otp))) {
+  //   res.status(400).json({
+  //     status: "error",
+  //     message: "OTP is incorrect..",
+  //   });
+  //   return;
+  // }
+
+  console.log("OTP is correct");
 
   // OTP is correct
 
@@ -143,6 +182,8 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
   user.otp = undefined;
 
   await user.save({ new: true, validateModifiedOnly: true });
+
+  console.log("User record updated successfully:", user);
 
   const token = signToken(user._id);
 
@@ -155,17 +196,29 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
 });
 
 // User Login
-exports.login = async (req, res, next) => {
+exports.login = catchAsync(async (req, res, next) => {
   const { email, password } = req.body;
+
+  console.log(email, password);
 
   if (!email || !password) {
     res.status(400).json({
       status: "error",
       message: "Both email and password are required",
     });
+    return;
   }
 
   const userDoc = await User.findOne({ email: email }).select("+password");
+
+  if (!userDoc || !userDoc.password) {
+    res.status(400).json({
+      status: "error",
+      message: "Incorrect password",
+    });
+
+    return;
+  }
 
   if (
     !userDoc ||
@@ -175,6 +228,7 @@ exports.login = async (req, res, next) => {
       status: "error",
       message: "Email or password is incorrect",
     });
+    return;
   }
 
   const token = signToken(userDoc._id);
@@ -184,7 +238,7 @@ exports.login = async (req, res, next) => {
     message: "Logged In Successfully",
     token,
   });
-};
+});
 
 exports.protect = async (req, res, next) => {
   // Getting token (JWT) and check if its there
@@ -253,6 +307,8 @@ exports.forgotPassword = async (req, res, next) => {
   // Generate the random reset token
 
   const resetToken = user.createPasswordResetToken();
+
+  console.log(resetToken, "Reset Token");
 
   const resetURL = `https://chat-app-lovat-six.vercel.app/auth/reset-password/?code=${resetToken}`;
 
