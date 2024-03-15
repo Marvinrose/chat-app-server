@@ -58,6 +58,12 @@ exports.register = catchAsync(async (req, res, next) => {
     // generate otp and send email to the user
     req.userId = new_user._id;
     next();
+    res.status(200).json({
+      status: "success",
+      message: "OTP has been sent to your email",
+    });
+
+    return;
   }
 });
 
