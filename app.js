@@ -18,6 +18,14 @@ const cors = require("cors"); // CORS is a node.js package for providing a Conne
 
 const app = express();
 
+app.use(
+  cors({
+    origin: "*",
+    methods: ["GET", "PATCH", "POST", "PUT", "DELETE"],
+    credentials: true,
+  })
+);
+
 // app.use(xss());
 
 app.use(express.json({ limit: "10kb" }));
@@ -46,22 +54,5 @@ app.use(
 app.use(mongosanitize());
 
 app.use(routes);
-
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS"],
-    credentials: true,
-  })
-);
-
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  res.header(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept"
-  );
-  next();
-});
 
 module.exports = app;
