@@ -17,6 +17,14 @@ const http = require("http");
 
 const server = http.createServer(app);
 
+// Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:3000",
+    methods: ["GET", "POST"],
+  },
+});
+
 const DB = process.env.DBURI.replace("<PASSWORD>", process.env.DBPASSWORD);
 
 mongoose
@@ -32,6 +40,20 @@ mongoose
   .catch((err) => {
     console.log(err);
   });
+
+// Listen for when the client connects via socket.io-client
+io.on("connection", async (socket) => {
+  console.log(JSON.stringify(socket.handshake.query));
+  const user_id = socket.handshake.query["user_id"];
+
+  const socked_id = socket.id;
+
+  console.log(`User connected ${socket.id}`);
+
+  if (user_id) {
+    await User.findByIdAndUpdate(user_id, { socked_id });
+  }
+});
 
 const port = process.env.PORT || 8000;
 
