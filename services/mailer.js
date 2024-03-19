@@ -39,3 +39,16 @@
 //     return sendSgMail(args);
 //   }
 // };
+
+const mailgun = require("mailgun-js");
+const DOMAIN = "sandbox56b130120c744fa496a9979ed9be8e22.mailgun.org";
+const mg = mailgun({ apiKey: "<PRIVATE_API_KEY>", domain: DOMAIN });
+const data = {
+  from: "Mailgun Sandbox <postmaster@sandbox56b130120c744fa496a9979ed9be8e22.mailgun.org>",
+  to: "mavinrose@flexisaf.com",
+  subject: "Hello",
+  text: "Testing some Mailgun awesomness!",
+};
+mg.messages().send(data, function (error, body) {
+  console.log(body);
+});

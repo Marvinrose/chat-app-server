@@ -6,6 +6,8 @@ const crypto = require("crypto");
 
 // const mailService = require("../services/mailer");
 
+const otp = require("../templates/mail/otp");
+
 const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
 // Signup => register - sendOTP - verifyOTP
@@ -68,74 +70,109 @@ exports.register = catchAsync(async (req, res, next) => {
 });
 
 exports.sendOTP = catchAsync(async (req, res, next) => {
-  const { userId } = req.body;
-
-  // If userId is not found in params, check req.body or req.query based on how userId is sent
-
-  if (!userId) {
-    return res.status(400).json({
-      status: "error",
-      message: "User ID not found in request",
-    });
-  }
+  const { userId } = req;
   const new_otp = otpGenerator.generate(6, {
     upperCaseAlphabets: false,
-    lowerCaseAlphabets: false,
     specialChars: false,
+    lowerCaseAlphabets: false,
   });
 
-  const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 mins after otp is sent
+  const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 Mins after otp is sent
 
-  try {
-    const user = await User.findByIdAndUpdate(userId, {
-      otp: new_otp,
-      otp_expiry_time: otp_expiry_time,
-    });
+  const user = await User.findByIdAndUpdate(userId, {
+    otp_expiry_time: otp_expiry_time,
+  });
 
-    if (!user) {
-      // Handle case where user is not found
-      return res
-        .status(404)
-        .json({ status: "error", message: "User not found" });
-    }
+  user.otp = new_otp.toString();
 
-    console.log(otp_expiry_time, "expires in..");
-    await user.save({ new: true, validateModifiedOnly: true });
-  } catch (error) {
-    // Handle database errors
-    console.error("Database error:", error);
-    return res
-      .status(500)
-      .json({ status: "error", message: "Internal server error" });
-  }
+  await user.save({ new: true, validateModifiedOnly: true });
 
-  // TODO => Send Mail
+  console.log(new_otp);
 
-  // mailService.sendEmail({
-  //   from: "rozzeymarvin32@gmail.com",
-  //   to: "example@gmail.com",
-  //   subject: "otp for tawk",
-  //   text: `Your OTP is ${new_otp}, valid for 10 minutes..`,
-  // });
-  // .then(() => {
-  //   res.status(200).json({
-  //     status: "success",
-  //     message: "Message sent successfully!",
-  //   });
-  // })
-  // .catch((err) => {
-  //   res.status(500).json({
-  //     status: "error",
-  //     message: "Oops! Something went wrong...",
-  //   });
-  // });
+  // TODO send mail
+  mailService.sendEmail({
+    from: "rozzeymarvin32@gmail.com",
+    to: user.email,
+    subject: "Verification OTP",
+    html: otp(user.firstName, new_otp),
+    attachments: [],
+  });
 
   res.status(200).json({
     status: "success",
-    message: "Otp sent successfully!",
+    message: "OTP Sent Successfully!",
   });
-  console.log("otppp", new_otp);
 });
+
+// exports.sendOTP = catchAsync(async (req, res, next) => {
+//   const { userId } = req;
+
+//   // If userId is not found in params, check req.body or req.query based on how userId is sent
+
+//   if (!userId) {
+//     return res.status(400).json({
+//       status: "error",
+//       message: "User ID not found in request",
+//     });
+//   }
+//   const new_otp = otpGenerator.generate(6, {
+//     upperCaseAlphabets: false,
+//     lowerCaseAlphabets: false,
+//     specialChars: false,
+//   });
+
+//   const otp_expiry_time = Date.now() + 10 * 60 * 1000; // 10 mins after otp is sent
+
+//   try {
+//     const user = await User.findByIdAndUpdate(userId, {
+//       otp: new_otp,
+//       otp_expiry_time: otp_expiry_time,
+//     });
+
+//     if (!user) {
+//       // Handle case where user is not found
+//       return res
+//         .status(404)
+//         .json({ status: "error", message: "User not found" });
+//     }
+
+//     console.log(otp_expiry_time, "expires in..");
+//     await user.save({ new: true, validateModifiedOnly: true });
+//   } catch (error) {
+//     // Handle database errors
+//     console.error("Database error:", error);
+//     return res
+//       .status(500)
+//       .json({ status: "error", message: "Internal server error" });
+//   }
+
+// TODO => Send Mail
+
+// mailService.sendEmail({
+//   from: "rozzeymarvin32@gmail.com",
+//   to: "example@gmail.com",
+//   subject: "otp for tawk",
+//   text: `Your OTP is ${new_otp}, valid for 10 minutes..`,
+// });
+// .then(() => {
+//   res.status(200).json({
+//     status: "success",
+//     message: "Message sent successfully!",
+//   });
+// })
+// .catch((err) => {
+//   res.status(500).json({
+//     status: "error",
+//     message: "Oops! Something went wrong...",
+//   });
+// });
+
+//   res.status(200).json({
+//     status: "success",
+//     message: "Otp sent successfully!",
+//   });
+//   console.log("otppp", new_otp);
+// });
 
 exports.verifyOTP = catchAsync(async (req, res, next) => {
   // verify otp and update user record accordingly
