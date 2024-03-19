@@ -24,3 +24,9 @@ exports.updateMe = async (req, res, next) => {
     message: "Profile updated successfully!..",
   });
 };
+
+exports.getUsers = async (req, res, next) => {
+  const all_users = await User.find({
+    verified: true,
+  }).select("firstName, lastName_id");
+};

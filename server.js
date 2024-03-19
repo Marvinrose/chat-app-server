@@ -43,16 +43,29 @@ mongoose
 
 // Listen for when the client connects via socket.io-client
 io.on("connection", async (socket) => {
+  console.log(socket, "socket:");
   console.log(JSON.stringify(socket.handshake.query));
   const user_id = socket.handshake.query["user_id"];
 
-  const socked_id = socket.id;
+  const socket_id = socket.id;
 
-  console.log(`User connected ${socket.id}`);
+  console.log(`User connected ${socket_id}`);
 
   if (user_id) {
-    await User.findByIdAndUpdate(user_id, { socked_id });
+    await User.findByIdAndUpdate(user_id, { socket_id });
   }
+
+  // We can write our event socket listeners here...
+
+  socket.on("friend_request", async (data) => {
+    console.log(data.to);
+
+    const to = await User.findById(data.to);
+
+    // TODO => create a friend request
+
+    io.to(to.socket_id).emit("new_friend_request");
+  });
 });
 
 const port = process.env.PORT || 8000;
