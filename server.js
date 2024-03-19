@@ -64,7 +64,9 @@ io.on("connection", async (socket) => {
 
     // TODO => create a friend request
 
-    io.to(to.socket_id).emit("new_friend_request");
+    io.to(to.socket_id).emit("new_friend_request", {
+      //
+    });
   });
 });
 
