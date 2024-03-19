@@ -4,7 +4,7 @@ const otpGenerator = require("otp-generator");
 
 const crypto = require("crypto");
 
-// const mailService = require("../services/mailer");
+const mailService = require("../services/mailer");
 
 const otp = require("../templates/mail/otp");
 
@@ -90,18 +90,26 @@ exports.sendOTP = catchAsync(async (req, res, next) => {
   console.log(new_otp);
 
   // TODO send mail
-  mailService.sendEmail({
-    from: "rozzeymarvin32@gmail.com",
-    to: user.email,
-    subject: "Verification OTP",
-    html: otp(user.firstName, new_otp),
-    attachments: [],
-  });
+  try {
+    // await mailService.sendMailgunEmail({
+    //   from: "rozzeymarvin32@gmail.com",
+    //   to: user.email,
+    //   subject: "Verification OTP",
+    //   html: otp(user.firstName, new_otp),
+    //   attachments: [],
+    // });
 
-  res.status(200).json({
-    status: "success",
-    message: "OTP Sent Successfully!",
-  });
+    res.status(200).json({
+      status: "success",
+      message: "OTP Sent Successfully!",
+    });
+  } catch (error) {
+    console.error("Error sending email:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to send OTP email",
+    });
+  }
 });
 
 // exports.sendOTP = catchAsync(async (req, res, next) => {
@@ -209,13 +217,13 @@ exports.verifyOTP = catchAsync(async (req, res, next) => {
   console.log("OTP entered by user:", otp);
   console.log("OTP stored in database:", user.otp);
 
-  // if (!(await user.correctOTP(otp, user.otp))) {
-  //   res.status(400).json({
-  //     status: "error",
-  //     message: "OTP is incorrect..",
-  //   });
-  //   return;
-  // }
+  if (!(await user.correctOTP(otp, user.otp))) {
+    res.status(400).json({
+      status: "error",
+      message: "OTP is incorrect..",
+    });
+    return;
+  }
 
   console.log("OTP is correct");
 
