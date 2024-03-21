@@ -109,6 +109,21 @@ io.on("connection", async (socket) => {
 
     await receiver.save({ new: true, validateModifiedOnly: true });
     await sender.save({ new: true, validateModifiedOnly: true });
+
+    await FriendRequest.findByIdAndDelete(data.request_id);
+
+    io.to(sender.socket_id).emit("request_accepted", {
+      message: "Friend Request Accepted",
+    });
+
+    io.to(receiver.socket_id).emit("request_accepted", {
+      message: "Friend Request Accepted",
+    });
+  });
+
+  socket.on("ënd", function () {
+    console.log("Closing Connection");
+    socket.disconnect(0);
   });
 });
 
