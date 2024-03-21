@@ -56,7 +56,7 @@ io.on("connection", async (socket) => {
   console.log(`User connected ${socket_id}`);
 
   if (Boolean(user_id)) {
-    await User.findByIdAndUpdate(user_id, { socket_id });
+    await User.findByIdAndUpdate(user_id, { socket_id, status: "Online" });
   }
 
   // We can write our event socket listeners here...
@@ -129,6 +129,32 @@ io.on("connection", async (socket) => {
     console.log("Received Message", data);
 
     // data: {to, from, text}
+
+    // create a new conversation if it doesn't exist yet or add new message to the messages list
+
+    // save to db
+
+    // emit incoming_message => to user
+
+    // emit outgoing_message => from user
+  });
+
+  // handle media/file messages
+
+  socket.on("file_message", (data) => {
+    console.log("Received Message", data);
+
+    // data: {to, from, text, file}
+
+    // get the file extension
+    const fileExtension = path.extname(data.file.name);
+
+    // generate a unique filename
+    const fileName = `${Date.now()}_${Math.floor(
+      Math.random() * 10000
+    )}${fileExtension}`;
+
+    // Upload file to AWS s3
 
     // create a new conversation if it doesn't exist yet or add new message to the messages list
 
