@@ -8,6 +8,8 @@ const mongoose = require("mongoose");
 
 dotenv.config({ path: "./config.env" });
 
+const path = require("path");
+
 process.on("uncaughtException", (err) => {
   console.log(err);
   process.exit(1);
@@ -121,7 +123,30 @@ io.on("connection", async (socket) => {
     });
   });
 
-  socket.on("ënd", function () {
+  // handle text/link messages
+
+  socket.on("text_message", (data) => {
+    console.log("Received Message", data);
+
+    // data: {to, from, text}
+
+    // create a new conversation if it doesn't exist yet or add new message to the messages list
+
+    // save to db
+
+    // emit incoming_message => to user
+
+    // emit outgoing_message => from user
+  });
+
+  socket.on("end", async (data) => {
+    // find user by _id and set the status to Offline
+    if (data.user_id) {
+      await User.findByIdAndUpdate(data.user_id, { status: "Offline" });
+    }
+
+    // TODO => Broadcast user_disconnected
+
     console.log("Closing Connection");
     socket.disconnect(0);
   });
