@@ -288,6 +288,7 @@ exports.login = catchAsync(async (req, res, next) => {
     status: "success",
     message: "Logged In Successfully",
     token,
+    user_id: userDoc._id,
   });
 });
 
