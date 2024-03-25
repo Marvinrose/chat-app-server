@@ -4,11 +4,23 @@ const otpGenerator = require("otp-generator");
 
 const crypto = require("crypto");
 
-const mailService = require("../services/mailer");
+const nodemailer = require("nodemailer");
+
+// const mailService = require("../services/mailer");
 
 const otp = require("../templates/mail/otp");
 
 const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
+
+// Create Nodemailer transporter
+
+const transporter = nodemailer.createTransport({
+  service: "Gmail",
+  auth: {
+    user: "rozzeymarvin32@gmail.com",
+    pass: "eetx ctzc buwc zsfx",
+  },
+});
 
 // Signup => register - sendOTP - verifyOTP
 
@@ -91,13 +103,16 @@ exports.sendOTP = catchAsync(async (req, res, next) => {
 
   // TODO send mail
   try {
-    // await mailService.sendMailgunEmail({
-    //   from: "rozzeymarvin32@gmail.com",
-    //   to: user.email,
-    //   subject: "Verification OTP",
-    //   html: otp(user.firstName, new_otp),
-    //   attachments: [],
-    // });
+   
+    const mailOptions = {
+      from: "rozzeymarvin32@gmail.com",
+      to: user.email,
+      subject: "Verification OTP",
+      html: otp(user.firstName, new_otp),
+      attachments: [],
+    };
+
+    await transporter.sendMail(mailOptions);
 
     res.status(200).json({
       status: "success",
