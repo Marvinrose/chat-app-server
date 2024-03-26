@@ -123,7 +123,7 @@ io.on("connection", async (socket) => {
     });
   });
 
-  socket.on("get_direct_conversation", async ({ user_id }, callback) => {
+  socket.on("get_direct_conversations", async ({ user_id }, callback) => {
     const existing_conversations = await OneToOneMessage.find({
       participants: { $all: [user_id] },
     }).populate("participants", "firstName lastName _id email status");
@@ -131,6 +131,40 @@ io.on("connection", async (socket) => {
     console.log(existing_conversations);
 
     callback(existing_conversations);
+  });
+
+  socket.on("start_conversation", async (data) => {
+    //  data: {to, from}
+
+    const { to, from } = data;
+
+    // check if there's any existing conversation between theses two users
+
+    const existing_conversations = await OneToOneMessage.find({
+      participants: { $size: 2, $all: [to, from] },
+    }).populate("participants", "firstName lastName _id email status");
+
+    console.log(existing_conversations[0], "Existing Conversation");
+
+    // if no existing conversation
+    if (existing_conversations.length === 0) {
+      let new_chat = await OneToOneMessage.create({ participants: [to, from] });
+
+      new_chat = await OneToOneMessage.findById(new_chat._id).populate(
+        "participants",
+        "firstName lastName _id email status"
+      );
+
+      console.log(new_chat);
+
+      socket.emit("start_chat", new_chat);
+    }
+
+    // if there's an existing conversation
+
+    
+
+
   });
 
   // handle text/link messages
