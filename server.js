@@ -161,10 +161,9 @@ io.on("connection", async (socket) => {
     }
 
     // if there's an existing conversation
-
-    
-
-
+    else {
+      socket.emit("start_chat", existing_conversations[0]);
+    }
   });
 
   // handle text/link messages
