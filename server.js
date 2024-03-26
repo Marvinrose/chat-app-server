@@ -24,7 +24,7 @@ const server = http.createServer(app);
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-8lbawc04p-marvinrose.vercel.app", // http://localhost:3000
+    origin: "http://localhost:3000", // http://localhost:3000
     methods: ["GET", "POST"],
   },
 });
@@ -121,6 +121,16 @@ io.on("connection", async (socket) => {
     io.to(receiver.socket_id).emit("request_accepted", {
       message: "Friend Request Accepted",
     });
+  });
+
+  socket.on("get_direct_conversation", async ({ user_id }, callback) => {
+    const existing_conversations = await OneToOneMessage.find({
+      participants: { $all: [user_id] },
+    }).populate("participants", "firstName lastName _id email status");
+
+    console.log(existing_conversations);
+
+    callback(existing_conversations);
   });
 
   // handle text/link messages
