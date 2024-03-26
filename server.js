@@ -182,11 +182,15 @@ io.on("connection", async (socket) => {
 
     const { to, from, message, conversation_id, type } = data;
 
+    const to_user = await User.findById(to);
+    const from_user = await User.findById(from);
+
     const new_message = {
       to,
       from,
       type,
       text: message,
+      created_at: Date.now(),
     };
 
     // create a new conversation if it doesn't exist yet or add new message to the messages list
@@ -198,9 +202,17 @@ io.on("connection", async (socket) => {
 
     await chat.save({});
 
-    // emit incoming_message => to user
+    // emit new_message => to user
+    io.to(to_user.socket_id).emit("new_message", {
+      conversation_id,
+      message: new_message,
+    });
 
-    // emit outgoing_message => from user
+    // emit new_message => from user
+    io.to(from_user.socket_id).emit("new_message", {
+      conversation_id,
+      message: new_message,
+    });
   });
 
   // handle media/file messages
