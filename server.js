@@ -24,7 +24,7 @@ const server = http.createServer(app);
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // http://localhost:3000
+    origin: "https://chat-app-dusky-six.vercel.app", // http://localhost:3000         https://chat-app-dusky-six.vercel.app
     methods: ["GET", "POST"],
   },
 });
