@@ -166,16 +166,37 @@ io.on("connection", async (socket) => {
     }
   });
 
+  socket.on("get_messages", async (data, callback) => {
+    const { messages } = await OneToOneMessage.findById(
+      data.conversation_id
+    ).select("messages");
+    callback(messages);
+  });
+
   // handle text/link messages
 
-  socket.on("text_message", (data) => {
+  socket.on("text_message", async (data) => {
     console.log("Received Message", data);
 
-    // data: {to, from, text}
+    // data: {to, from, message, conversation_id, type}
+
+    const { to, from, message, conversation_id, type } = data;
+
+    const new_message = {
+      to,
+      from,
+      type,
+      text: message,
+    };
 
     // create a new conversation if it doesn't exist yet or add new message to the messages list
 
+    const chat = await OneToOneMessage.findById(conversation_id);
+    chat.messages.push(new_message);
+
     // save to db
+
+    await chat.save({});
 
     // emit incoming_message => to user
 
