@@ -15,6 +15,8 @@ process.on("uncaughtException", (err) => {
   process.exit(1);
 });
 
+const OneToOneMessage = require("./models/OneToOneMessage");
+
 const http = require("http");
 const FriendRequest = require("./models/friendRequest");
 const User = require("./models/user");
@@ -24,7 +26,7 @@ const server = http.createServer(app);
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
 const io = new Server(server, {
   cors: {
-    origin: "https://chat-app-dusky-six.vercel.app", // http://localhost:3000         https://chat-app-dusky-six.vercel.app
+    origin: "http://localhost:3000", // http://localhost:3000         https://chat-app-dusky-six.vercel.app
     methods: ["GET", "POST"],
   },
 });
