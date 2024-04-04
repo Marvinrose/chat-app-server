@@ -26,7 +26,7 @@ const server = http.createServer(app);
 // Create an io server and allow for CORS from http://localhost:3000 with GET and POST methods
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:3000", // http://localhost:3000         https://chat-app-dusky-six.vercel.app
+    origin: "*", // http://localhost:3000         https://chat-app-dusky-six.vercel.app
     methods: ["GET", "POST"],
   },
 });
@@ -57,9 +57,20 @@ io.on("connection", async (socket) => {
 
   console.log(`User connected ${socket_id}`);
 
-  if (Boolean(user_id)) {
-    await User.findByIdAndUpdate(user_id, { socket_id, status: "Online" });
+  if (user_id != null && Boolean(user_id)) {
+    try {
+      User.findByIdAndUpdate(user_id, {
+        socket_id: socket.id,
+        status: "Online",
+      });
+    } catch (e) {
+      console.log(e);
+    }
   }
+
+  // if (Boolean(user_id)) {
+  //   await User.findByIdAndUpdate(user_id, { socket_id, status: "Online" });
+  // }
 
   // We can write our event socket listeners here...
 
@@ -116,11 +127,11 @@ io.on("connection", async (socket) => {
 
     await FriendRequest.findByIdAndDelete(data.request_id);
 
-    io.to(sender.socket_id).emit("request_accepted", {
+    io.to(sender?.socket_id).emit("request_accepted", {
       message: "Friend Request Accepted",
     });
 
-    io.to(receiver.socket_id).emit("request_accepted", {
+    io.to(receiver?.socket_id).emit("request_accepted", {
       message: "Friend Request Accepted",
     });
   });
@@ -169,16 +180,28 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("get_messages", async (data, callback) => {
-    const { messages } = await OneToOneMessage.findById(
-      data.conversation_id
-    ).select("messages");
-    callback(messages);
+    try {
+      const { messages } = await OneToOneMessage.findById(
+        data.conversation_id
+      ).select("messages");
+      callback(messages);
+    } catch (error) {
+      console.log(error);
+    }
+
+    // const { messages } = await OneToOneMessage.findById(
+    //   data.conversation_id
+    // ).select("messages");
+    // callback(messages);
   });
 
   // handle text/link messages
 
   socket.on("text_message", async (data) => {
     console.log("Received Message", data);
+
+    // Log the conversation ID received from the client
+    console.log("Conversation ID:", data.conversation_id);
 
     // data: {to, from, message, conversation_id, type}
 
@@ -188,34 +211,95 @@ io.on("connection", async (socket) => {
     const from_user = await User.findById(from);
 
     const new_message = {
-      to,
-      from,
-      type,
+      to: to,
+      from: from,
+      type: type,
       text: message,
       created_at: Date.now(),
     };
 
-    // create a new conversation if it doesn't exist yet or add new message to the messages list
+    try {
+      // Log before attempting to find the conversation
+      console.log("Attempting to find conversation:", conversation_id);
 
-    const chat = await OneToOneMessage.findById(conversation_id);
-    chat.messages.push(new_message);
+      // Find the conversation by ID
+      const chat = await OneToOneMessage.findById(conversation_id);
 
-    // save to db
+      // Log the found conversation
+      console.log("Found conversation:", chat);
 
-    await chat.save({});
+      // Check if the conversation exists
+      if (!chat) {
+        throw new Error("Conversation not found");
+      }
 
-    // emit new_message => to user
-    io.to(to_user.socket_id).emit("new_message", {
-      conversation_id,
-      message: new_message,
-    });
+      // Add the new message to the conversation
+      chat.messages.push(new_message);
 
-    // emit new_message => from user
-    io.to(from_user.socket_id).emit("new_message", {
-      conversation_id,
-      message: new_message,
-    });
+      // Save the updated conversation to the database
+      await chat.save();
+
+      // Log successful message saving
+      console.log(
+        "Message saved successfully to conversation:",
+        conversation_id
+      );
+
+      // Emit the new message to the 'to' and 'from' users
+      io.to(to_user?.socket_id).emit("new_message", {
+        conversation_id,
+        message: new_message,
+      });
+
+      io.to(from_user?.socket_id).emit("new_message", {
+        conversation_id,
+        message: new_message,
+      });
+    } catch (error) {
+      // Log any errors that occur during message saving
+      console.error("Error saving message:", error.message);
+    }
   });
+
+  // socket.on("text_message", async (data) => {
+  //   console.log("Received Message", data);
+
+  //   // data: {to, from, message, conversation_id, type}
+
+  //   const { to, from, message, conversation_id, type } = data;
+
+  //   const to_user = await User.findById(to);
+  //   const from_user = await User.findById(from);
+
+  //   const new_message = {
+  //     to: to,
+  //     from: from,
+  //     type: type,
+  //     text: message,
+  //     created_at: Date.now(),
+  //   };
+
+  //   // create a new conversation if it doesn't exist yet or add new message to the messages list
+
+  //   const chat = await OneToOneMessage.findById(conversation_id);
+  //   chat.messages.push(new_message);
+
+  //   // save to db
+
+  //   await chat.save({ new: true, validateModifiedOnly: true });
+
+  //   // emit new_message => to user
+  //   io.to(to_user?.socket_id).emit("new_message", {
+  //     conversation_id,
+  //     message: new_message,
+  //   });
+
+  //   // emit new_message => from user
+  //   io.to(from_user?.socket_id).emit("new_message", {
+  //     conversation_id,
+  //     message: new_message,
+  //   });
+  // });
 
   // handle media/file messages
 
