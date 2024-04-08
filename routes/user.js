@@ -33,4 +33,10 @@ router.post(
   userController.startAudioCall
 );
 
+router.post(
+  "/start-video-call",
+  authController.protect,
+  userController.startVideoCall
+);
+
 module.exports = router;
