@@ -6,6 +6,8 @@ const { Server } = require("socket.io");
 
 const AudioCall = require("./models/audioCall");
 
+const VideoCall = require("./models/videoCall");
+
 const mongoose = require("mongoose");
 
 dotenv.config({ path: "./config.env" });
@@ -432,6 +434,114 @@ io.on("connection", async (socket) => {
       to,
     });
   });
+
+  // --------------------- HANDLE VIDEO CALL SOCKET EVENTS ---------------------- //
+
+  // handle start_video_call event
+  socket.on("start_video_call", async (data) => {
+    const { from, to, roomID } = data;
+
+    console.log(data);
+
+    const to_user = await User.findById(to);
+    const from_user = await User.findById(from);
+
+    console.log("to_user", to_user);
+
+    // send notification to receiver of call
+    io.to(to_user?.socket_id).emit("video_call_notification", {
+      from: from_user,
+      roomID,
+      streamID: from,
+      userID: to,
+      userName: to,
+    });
+  });
+
+  // handle video_call_not_picked
+  socket.on("video_call_not_picked", async (data) => {
+    console.log(data);
+    // find and update call record
+    const { to, from } = data;
+
+    const to_user = await User.findById(to);
+
+    await VideoCall.findOneAndUpdate(
+      {
+        participants: { $size: 2, $all: [to, from] },
+      },
+      { verdict: "Missed", status: "Ended", endedAt: Date.now() }
+    );
+
+    // TODO => emit call_missed to receiver of call
+    io.to(to_user?.socket_id).emit("video_call_missed", {
+      from,
+      to,
+    });
+  });
+
+  // handle video_call_accepted
+  socket.on("video_call_accepted", async (data) => {
+    const { to, from } = data;
+
+    const from_user = await User.findById(from);
+
+    // find and update call record
+    await VideoCall.findOneAndUpdate(
+      {
+        participants: { $size: 2, $all: [to, from] },
+      },
+      { verdict: "Accepted" }
+    );
+
+    // TODO => emit call_accepted to sender of call
+    io.to(from_user?.socket_id).emit("video_call_accepted", {
+      from,
+      to,
+    });
+  });
+
+  // handle video_call_denied
+  socket.on("video_call_denied", async (data) => {
+    // find and update call record
+    const { to, from } = data;
+
+    await VideoCall.findOneAndUpdate(
+      {
+        participants: { $size: 2, $all: [to, from] },
+      },
+      { verdict: "Denied", status: "Ended", endedAt: Date.now() }
+    );
+
+    const from_user = await User.findById(from);
+    // TODO => emit call_denied to sender of call
+
+    io.to(from_user?.socket_id).emit("video_call_denied", {
+      from,
+      to,
+    });
+  });
+
+  // handle user_is_busy_video_call
+  socket.on("user_is_busy_video_call", async (data) => {
+    const { to, from } = data;
+    // find and update call record
+    await VideoCall.findOneAndUpdate(
+      {
+        participants: { $size: 2, $all: [to, from] },
+      },
+      { verdict: "Busy", status: "Ended", endedAt: Date.now() }
+    );
+
+    const from_user = await User.findById(from);
+    // TODO => emit on_another_video_call to sender of call
+    io.to(from_user?.socket_id).emit("on_another_video_call", {
+      from,
+      to,
+    });
+  });
+
+  // -------------- HANDLE SOCKET DISCONNECTION ----------------- //
 
   socket.on("end", async (data) => {
     // find user by _id and set the status to Offline
