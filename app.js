@@ -12,7 +12,7 @@ const mongosanitize = require("express-mongo-sanitize"); // Express 4.x middlewa
 
 const bodyParser = require("body-parser"); //  Node.js body parsing middleware. Parse incoming request bodies in a middleware before your handlers.
 
-const xss = require("xss"); // Sanitize untrusted HTML (to prevent XSS) with a configuration specified by a Whitelist
+const xss = require("xss-clean");// Sanitize untrusted HTML (to prevent XSS) with a configuration specified by a Whitelist
 
 const cors = require("cors"); // CORS is a node.js package for providing a Connect/Express middleware that can be used to enable CORS with various options.
 
@@ -26,7 +26,7 @@ app.use(
   })
 );
 
-// app.use(xss());
+app.use(xss());
 
 app.use(express.json({ limit: "10kb" }));
 app.use(bodyParser.json());
