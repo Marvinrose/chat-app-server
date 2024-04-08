@@ -1,14 +1,3 @@
-// export const generateToken = (req, res, next) => {
-//   try {
-//     const appId = parseInt(process.env.ZEG0_APP_ID);
-//     const serverSecret = process.env.Zego_APP_secret;
-//     const userId = req.params.userId;
-//     const effectiveTime = 3600;
-//     const payload = "";
-//   } catch (error) {}
-// };
-
-
 "use strict";
 exports.__esModule = true;
 var crypto_1 = require("crypto");
