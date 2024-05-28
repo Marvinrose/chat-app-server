@@ -22,6 +22,8 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+
+
 // Signup => register - sendOTP - verifyOTP
 
 const User = require("../models/user");
