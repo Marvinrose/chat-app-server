@@ -65,6 +65,7 @@ exports.register = catchAsync(async (req, res, next) => {
       validateModifiedOnly: true,
     });
 
+    
     req.userId = existing_user._id;
     next();
   } else {
