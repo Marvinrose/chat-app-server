@@ -17,12 +17,10 @@ const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 const transporter = nodemailer.createTransport({
   service: "Gmail",
   auth: {
-    user: "rozzeymarvin32@gmail.com",
-    pass: "eetx ctzc buwc zsfx",
+    user: process.env.EMAIL,
+    pass: process.env.EMAIL_PASSWORD,
   },
 });
-
-
 
 // Signup => register - sendOTP - verifyOTP
 
@@ -65,7 +63,6 @@ exports.register = catchAsync(async (req, res, next) => {
       validateModifiedOnly: true,
     });
 
-    
     req.userId = existing_user._id;
     next();
   } else {
@@ -106,7 +103,6 @@ exports.sendOTP = catchAsync(async (req, res, next) => {
 
   // TODO send mail
   try {
-   
     const mailOptions = {
       from: "rozzeymarvin32@gmail.com",
       to: user.email,
