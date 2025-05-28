@@ -10,8 +10,6 @@ const nodemailer = require("nodemailer");
 
 const otp = require("../templates/mail/otp");
 
-
-
 const signToken = (userId) => jwt.sign({ userId }, process.env.JWT_SECRET);
 
 // Create Nodemailer transporter
