@@ -20,9 +20,13 @@ const app = express();
 
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "PATCH", "POST", "PUT", "DELETE"],
+    origin: [
+      "https://chat-app-dusky-six.vercel.app",
+      /^http:\/\/localhost:\d+$/  // Matches any localhost port
+    ],
+    methods: ["GET", "PATCH", "POST", "PUT", "DELETE", "OPTIONS"],
     credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept']
   })
 );
 
